@@ -64,7 +64,7 @@ Besides `url`, `request()` takes many other parameters listed below, and returns
     Target url.
 
 - `method: str = 'GET'`    
-    HTTP verb. Now support `GET` and `POST`.
+    HTTP verb. Now support `'GET'` and `'POST'`.
 
 - `headers: Optional[dict] = None`  
     HTTP headers, which will be merged with `Client` headers.
@@ -127,7 +127,7 @@ Under the hood, all parameters are passed into the constructor of a special clas
     `meta` data in the corresponding `Request`.
 
 - `text(self, encoding: Optional[str] = None) -> str`  
-    Response body in text. If `encoding` is not set, `Response` will use [cchardet](https://github.com/PyYoshi/cChardet) to detect encoding. If cchardet fails, `'utf-8'` will be assumed. 
+    Response body in text. If `encoding` is not set, `Response` will use [cchardet](https://github.com/PyYoshi/cChardet) to detect encoding. If cchardet fails, `'utf-8'` will be assumed.
 
 - `json(self) -> Jsonable`  
     Response body as json. `Jsonable` is defined as `NewType('Jsonable', Any)`.
@@ -137,7 +137,7 @@ Under the hood, all parameters are passed into the constructor of a special clas
     
 `text()`, `json()`, or `etree()` may sometimes be a expensive operation and they are not likely to be all valid for a single `Response`, so `Response` will compute them lazily.
 
-If an exception occurs during processing (including timeout), `Response` will be constructed like:
+If an exception occurs during processing (including timeout), `Response` will be constructed as below, where `result` is the exception instance:
 
 ```python
     resp = Response(
