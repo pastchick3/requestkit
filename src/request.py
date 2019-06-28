@@ -1,3 +1,5 @@
+'''The Request class used in Clinet.'''
+
 from __future__ import annotations
 
 __all__ = ['Request']
@@ -9,11 +11,17 @@ from typing import Any, NewType, Optional, SupportsFloat, Union
 from yarl import URL
 
 
+# A library-defined type used in type annotations.
 Jsonable = NewType('Jsonable', Any)
 
 
 @dataclass
 class Request:
+    '''The Request class used in Clinet.
+
+    Users should not directly instantiate Request.
+    Use Client.request() instead.
+    '''
 
     url: Union[str, URL]
     method: str = 'GET'

@@ -1,3 +1,5 @@
+'''HTTP Client'''
+
 from __future__ import annotations
 
 __all__ = ['Client']
@@ -24,14 +26,18 @@ from .response import Response
 
 
 class Throttle:
+    '''Throttle used to contorl the maximum number of concurrent requests'''
 
     def __init__(self, concur, concur_per_host):
+        # concur is the maximum number of total concurrent requests.
+        # concur_per_host is the maximum number of concurrent requests towards one host.
         self._concur_sema = asyncio.Semaphore(concur)
         self._host_sema_factory = partial(asyncio.Semaphore, concur_per_host)
         self._hosts = WeakValueDictionary()
 
     @asynccontextmanager
     async def request(self, host):
+        '''This method yield when both concurrent limits are satisfied.'''
         sema = self._host_sema_factory()
         host_sema = self._hosts.setdefault(host, sema)
         async with self._concur_sema, host_sema:
@@ -39,7 +45,9 @@ class Throttle:
 
 
 class Client:
+    '''HTTP Client'''
 
+    # Default setting
     setting: dict = {
         'timeout': 20,
         'retry': 1,
@@ -80,12 +88,14 @@ class Client:
         self.close()
 
     def request(self, url, **kwargs) -> Future:
+        '''Schedule a request's execution.'''
         req = Request(url, **kwargs)
         fut = Future()
         self._queue.put((fut, req))
         return fut
 
     def close(self) -> None:
+        '''Close the client.'''
         self._running = False
         while self._thread.is_alive():
             sleep(0.1)
@@ -113,6 +123,7 @@ class Client:
                     self._queue.task_done()
                 finally:
                     await asyncio.sleep(0.1)
+        # https://docs.aiohttp.org/en/stable/client_advanced.html#graceful-shutdown
         await asyncio.sleep(1)
         self._logger.info('close')
 

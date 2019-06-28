@@ -1,3 +1,5 @@
+'''WebSocket Client and Server'''
+
 from __future__ import annotations
 
 __all__ = ['Jsonable', 'WebSocketServer', 'WebSocketClient']
@@ -17,6 +19,10 @@ from .request import Jsonable
 
 
 class _AbstractWebSocket:
+    '''Abstract WebSocket Class
+
+    All its subclasses should implement _async_main method.
+    '''
 
     def __init__(self, *,
                  host: Optional[str] = None,
@@ -38,6 +44,7 @@ class _AbstractWebSocket:
         self._thread.start()
 
     def send(self, item: Union[str, bytes, Jsonable]) -> None:
+        '''Instruct WebSocket to send a item.'''
         try:
             self._queue.put_nowait(item)
         except Full:
@@ -46,9 +53,11 @@ class _AbstractWebSocket:
             self._queue.put_nowait(item)
 
     def join(self) -> None:
+        '''Block until all items are actually sent.'''
         self._queue.join()
 
     def close(self) -> None:
+        '''Close WebSocket.'''
         self._running = False
         while self._thread.is_alive():
             sleep(0.1)
@@ -60,6 +69,9 @@ class _AbstractWebSocket:
         self.close()
 
     def _prepare_callbacks(self, callbacks):
+        '''Inspect annotations of callbacks to determine which kind
+        of items they should process.
+        '''
         cb_dict = {
             'str': [],
             'bytes': [],
@@ -79,12 +91,14 @@ class _AbstractWebSocket:
         asyncio.run(self._async_main())
 
     async def _async_main(self):
+        '''Subclasses should use _loop method to implement this method.'''
         raise NotImplementedError
 
     async def _loop(self, ws):
         self._logger.info('start')
         self._logger.info(f'callbacks: {self._callbacks}')
         while self._running:
+            # Get items and process them.
             try:
                 msg = await ws.receive(timeout=0.05)
             except asyncio.TimeoutError:
@@ -105,6 +119,7 @@ class _AbstractWebSocket:
                 elif msg.type == WSMsgType.BINARY:
                     for cb in self._callbacks['bytes']:
                         cb(data, self)
+            # Send items.
             try:
                 item = self._queue.get_nowait()
             except Empty:
@@ -124,6 +139,7 @@ class _AbstractWebSocket:
 
 
 class WebSocketServer(_AbstractWebSocket):
+    '''WebSocket Server'''
 
     async def _async_main(self):
         app = web.Application()
@@ -144,6 +160,7 @@ class WebSocketServer(_AbstractWebSocket):
 
 
 class WebSocketClient(_AbstractWebSocket):
+    '''WebSocket Client'''
 
     async def _async_main(self):
         async with ClientSession() as session:
